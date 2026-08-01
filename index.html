@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>승무원 FDP 계산</title>
+  <!-- 구글 폰트 Inter 로드 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      padding: 24px 16px;
+      min-height: 100vh;
+      font-size: 0.95rem;
+    }
+
+    /* 헤더 영역 */
+    .header-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
+      max-width: 1600px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 4px;
+    }
+
+    .koreanair-logo {
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+      color: #00256c;
+      display: flex;
+      align-items: center;
+      user-select: none;
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 20px;
+      background-color: #cbd5e1;
+    }
+
+    .header-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 🌸 핑크 구름 & 🧸 갈색 곰돌이 두둥실 애니메이션 */
+    .pink-cloud {
+      display: inline-block;
+      font-size: 1.4rem;
+      filter: drop-shadow(0px 2px 4px rgba(244, 114, 182, 0.3)) hue-rotate(310deg) saturate(1.5);
+      animation: floatCloud 4s ease-in-out infinite;
+      user-select: none;
+      margin-left: 2px;
+    }
+
+    .bear-icon {
+      display: inline-block;
+      font-size: 1.15rem;
+      animation: floatBear 4s ease-in-out infinite;
+      animation-delay: 0.3s;
+      user-select: none;
+    }
+
+    @keyframes floatCloud {
+      0% { transform: translateY(0px) translateX(0px); }
+      50% { transform: translateY(-5px) translateX(4px); }
+      100% { transform: translateY(0px) translateX(0px); }
+    }
+
+    @keyframes floatBear {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-4px) rotate(6deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    /* 반응형 그리드 레이아웃 */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .card-panel {
+      background: #ffffff;
+      padding: 22px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-subtitle {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .panel-divider {
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* 입력 폼 스타일 */
+    .input-section {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background-color: #ffffff;
+      outline: none;
+      font-family: 'Inter', sans-serif;
+    }
+
+    select:focus, input:focus {
+      border-color: #2563eb;
+    }
+
+    /* 요약 안내 박스 */
+    .summary-box {
+      background: #e2e8f0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #334155;
+      margin-bottom: 16px;
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+
+    /* 결과 카드 출력 영역 */
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .time-card {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border-left: 5px solid #cbd5e1;
+      background-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .time-card.kst { border-left-color: #2563eb; background-color: #eff6ff; }
+    .time-card.zulu { border-left-color: #d97706; background-color: #fffbeb; }
+    .time-card.local { border-left-color: #059669; background-color: #ecfdf5; }
+    .time-card.margin { border-left-color: #f43f5e; background-color: #fff1f2; }
+
+    .card-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+    }
+
+    .card-time {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .card-sub {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 영역 -->
+  <div class="header-container">
+    <div class="koreanair-logo">KOREAN AIR</div>
+    <div class="header-divider"></div>
+    <h1 class="header-title">
+      승무원 FDP 계산 
+      <span class="pink-cloud">☁️</span>
+      <span class="bear-icon">🧸</span>
+    </h1>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- ==================== [1번 패널] FDP MARGIN ==================== -->
+    <div class="card-panel">
+      <div class="panel-title panel-divider">1️⃣ FDP MARGIN</div>
+      <div class="input-section">
+        <div class="form-group">
+          <label>기준 FDP</label>
+          <div class="form-row">
+            <input type="number" id="p1_baseH" value="13" min="0" oninput="calcPanel1()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">시간</span>
+            <input type="number" id="p1_baseM" value="0" min="0" max="59" oninput="calcPanel1()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">분</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>현재 FDP</label>
+          <div class="form-row">
+            <input type="number" id="p1_curH" value="10" min="0" oninput="calcPanel1()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">시간</span>
+            <input type="number" id="p1_curM" value="30" min="0" max="59" oninput="calcPanel1()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">분</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        💡 <strong>FDP 마진 계산식</strong><br>
+        기준 FDP - 현재 FDP = 잔여 여유 FDP
+      </div>
+
+      <div class="result-section">
+        <div class="time-card margin" style="padding: 16px 14px;">
+          <div>
+            <div class="card-label">📊 FDP 마진 (잔여 여유 시간)</div>
+            <div class="card-sub" id="p1_statusText">FDP 한도 내 정상</div>
+          </div>
+          <div class="card-time" id="p1_marginResult" style="font-size: 1.2rem; color: #e11d48;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== [2번 패널] 시차 비교 ==================== -->
+    <div class="card-panel">
+      <div class="panel-title">2️⃣ 시차 비교</div>
+      <div class="panel-subtitle">KST vs ZULU vs 선택국가의 시간</div>
+      <div class="input-section">
+        <div class="form-group">
+          <label>KST (한국 시간) 입력</label>
+          <div class="form-row">
+            <input type="date" id="p2_kstDate" style="width: 50%;" onchange="calcPanel2()">
+            <select id="p2_kstHour" style="width: 25%;" onchange="calcPanel2()"></select>
+            <select id="p2_kstMin" style="width: 25%;" onchange="calcPanel2()"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>비교 대상 국가/도시 선택</label>
+          <div class="form-row">
+            <select id="p2_range" style="width: 42%;" onchange="updateCityDropdown('p2'); calcPanel2();">
+              <option value="ALL">전체 노선</option>
+              <option value="ICN">대한민국 (인천)</option>
+              <option value="LONG">장거리 (미주/유럽/오세아니아)</option>
+              <option value="MID" selected>중거리 (동남아/서아시아/괌)</option>
+              <option value="SHORT_JP">단거리 (일본)</option>
+              <option value="SHORT_CN">단거리 (중국/홍콩/마카오)</option>
+              <option value="SHORT_ETC">단거리 (대만/몽골/그외)</option>
+            </select>
+            <select id="p2_city" style="width: 58%;" onchange="calcPanel2()"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        🌐 KST 기준 <strong>ZULU(UTC)</strong> 및 <strong>현지 시각</strong> 동시 변환
+      </div>
+
+      <div class="result-section">
+        <div class="time-card kst">
+          <div>
+            <div class="card-label">🇰🇷 KST (한국 표준시)</div>
+            <div class="card-sub">UTC+09:00</div>
+          </div>
+          <div class="card-time" id="p2_kstResult">-</div>
+        </div>
+
+        <div class="time-card zulu">
+          <div>
+            <div class="card-label">🌐 ZULU (UTC)</div>
+            <div class="card-sub">UTC+00:00</div>
+          </div>
+          <div class="card-time" id="p2_zuluResult">-</div>
+        </div>
+
+        <div class="time-card local">
+          <div>
+            <div class="card-label">📍 현지시간 (<span id="p2_localCityLabel">선택 도시</span>)</div>
+            <div class="card-sub" id="p2_localOffsetLabel">UTC Offset</div>
+          </div>
+          <div class="card-time" id="p2_localResult">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== [3번 패널] 다음 비행근무 시작 가능 시각 ==================== -->
+    <div class="card-panel">
+      <div class="panel-title">3️⃣ 다음 비행근무 시작 가능 시각</div>
+      <div class="panel-subtitle">승무원 최소 휴식 후 차출 필요한 경우</div>
+      <div class="input-section">
+        <div class="form-group">
+          <label for="p3_ataType">입력할 ATA의 시간 기준</label>
+          <select id="p3_ataType" onchange="calcPanel3()">
+            <option value="LOCAL">현지시간 (도착지 기준)</option>
+            <option value="KST">KST (한국 표준시 / UTC+9)</option>
+            <option value="ZULU">ZULU (UTC)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>도착 현지 도시 선택</label>
+          <div class="form-row">
+            <select id="p3_range" style="width: 42%;" onchange="updateCityDropdown('p3'); calcPanel3();">
+              <option value="ALL">전체 노선</option>
+              <option value="ICN">대한민국 (인천)</option>
+              <option value="LONG">장거리 (미주/유럽/오세아니아)</option>
+              <option value="MID" selected>중거리 (동남아/서아시아/괌)</option>
+              <option value="SHORT_JP">단거리 (일본)</option>
+              <option value="SHORT_CN">단거리 (중국/홍콩/마카오)</option>
+              <option value="SHORT_ETC">단거리 (대만/몽골/그외)</option>
+            </select>
+            <select id="p3_city" style="width: 58%;" onchange="calcPanel3()"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ATA (항공기 정지 시각 / Ramp In)</label>
+          <div class="form-row">
+            <input type="date" id="p3_ataDate" style="width: 50%;" onchange="calcPanel3()">
+            <select id="p3_ataHour" style="width: 25%;" onchange="calcPanel3()"></select>
+            <select id="p3_ataMin" style="width: 25%;" onchange="calcPanel3()"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>필요 휴식시간 (Rest Period)</label>
+          <div class="form-row">
+            <input type="number" id="p3_restHours" value="12" min="0" oninput="calcPanel3()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">시간</span>
+            <input type="number" id="p3_restMinutes" value="0" min="0" max="59" oninput="calcPanel3()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">분</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        ⏱️ <strong>근무 종료 시각</strong>: ATA + 30분<br>
+        🛫 <strong>근무 시작 가능 시각 = 브리핑 시작 시각</strong><br>
+        : 근무 종료 + 필요 휴식시간
+      </div>
+
+      <div class="result-section">
+        <div class="time-card kst">
+          <div>
+            <div class="card-label">🇰🇷 KST (한국 표준시)</div>
+            <div class="card-sub">UTC+09:00</div>
+          </div>
+          <div class="card-time" id="p3_kstResult">-</div>
+        </div>
+
+        <div class="time-card zulu">
+          <div>
+            <div class="card-label">🌐 ZULU (UTC)</div>
+            <div class="card-sub">UTC+00:00</div>
+          </div>
+          <div class="card-time" id="p3_zuluResult">-</div>
+        </div>
+
+        <div class="time-card local">
+          <div>
+            <div class="card-label">📍 현지시간 (<span id="p3_localCityLabel">선택 도시</span>)</div>
+            <div class="card-sub" id="p3_localOffsetLabel">UTC Offset</div>
+          </div>
+          <div class="card-time" id="p3_localResult">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== [4번 패널] FDP 내 최대 출발 가능 시각 ==================== -->
+    <div class="card-panel">
+      <div class="panel-title">4️⃣ FDP 내 최대 출발 가능 시각</div>
+      <div class="panel-subtitle">승무원 브리핑 이후 지연된 경우</div>
+      <div class="input-section">
+        <div class="form-group">
+          <label for="p4_briefType">입력할 브리핑 시각의 시간 기준</label>
+          <select id="p4_briefType" onchange="calcPanel4()">
+            <option value="LOCAL">현지시간 (출발지 기준)</option>
+            <option value="KST">KST (한국 표준시 / UTC+9)</option>
+            <option value="ZULU">ZULU (UTC)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>출발 현지 도시 선택</label>
+          <div class="form-row">
+            <select id="p4_range" style="width: 42%;" onchange="updateCityDropdown('p4'); calcPanel4();">
+              <option value="ALL">전체 노선</option>
+              <option value="ICN">대한민국 (인천)</option>
+              <option value="LONG">장거리 (미주/유럽/오세아니아)</option>
+              <option value="MID" selected>중거리 (동남아/서아시아/괌)</option>
+              <option value="SHORT_JP">단거리 (일본)</option>
+              <option value="SHORT_CN">단거리 (중국/홍콩/마카오)</option>
+              <option value="SHORT_ETC">단거리 (대만/몽골/그외)</option>
+            </select>
+            <select id="p4_city" style="width: 58%;" onchange="calcPanel4()"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>객실 브리핑 시각 (FDP 시작 시각)</label>
+          <div class="form-row">
+            <input type="date" id="p4_briefDate" style="width: 50%;" onchange="calcPanel4()">
+            <select id="p4_briefHour" style="width: 25%;" onchange="calcPanel4()"></select>
+            <select id="p4_briefMin" style="width: 25%;" onchange="calcPanel4()"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>최대 허용 비행근무시간 (Max Allowed FDP)</label>
+          <div class="form-row">
+            <input type="number" id="p4_fdpHours" value="13" min="0" oninput="calcPanel4()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">시간</span>
+            <input type="number" id="p4_fdpMinutes" value="0" min="0" max="59" oninput="calcPanel4()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">분</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>예정 비행시간 (Flight Time)</label>
+          <div class="form-row">
+            <input type="number" id="p4_flightHours" value="6" min="0" oninput="calcPanel4()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">시간</span>
+            <input type="number" id="p4_flightMinutes" value="0" min="0" max="59" oninput="calcPanel4()">
+            <span style="align-self: center; font-weight: bold; font-size: 0.95rem;">분</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        ⏱️ <strong>FDP 한계 종료 시각</strong><br>
+        : 브리핑 시작 시각 + 최대 허용 FDP<br>
+        🚨 <strong>최대 출발(Push Back) 가능 시각</strong><br>
+        : FDP 종료 시각 - 예정 비행시간
+      </div>
+
+      <div class="result-section">
+        <div class="time-card kst">
+          <div>
+            <div class="card-label">🇰🇷 KST (한국 표준시)</div>
+            <div class="card-sub">UTC+09:00</div>
+          </div>
+          <div class="card-time" id="p4_kstResult">-</div>
+        </div>
+
+        <div class="time-card zulu">
+          <div>
+            <div class="card-label">🌐 ZULU (UTC)</div>
+            <div class="card-sub">UTC+00:00</div>
+          </div>
+          <div class="card-time" id="p4_zuluResult">-</div>
+        </div>
+
+        <div class="time-card local">
+          <div>
+            <div class="card-label">📍 현지시간 (<span id="p4_localCityLabel">선택 도시</span>)</div>
+            <div class="card-sub" id="p4_localOffsetLabel">UTC Offset</div>
+          </div>
+          <div class="card-time" id="p4_localResult">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cities = [
+      { range: "ICN", name: "[ICN] 인천", zone: "Asia/Seoul" },
+      { range: "LONG", name: "[AKL] 오클랜드", zone: "Pacific/Auckland" },
+      { range: "LONG", name: "[AMS] 암스테르담", zone: "Europe/Amsterdam" },
+      { range: "LONG", name: "[ATL] 애틀랜타", zone: "America/New_York" },
+      { range: "LONG", name: "[BNE] 브리즈번", zone: "Australia/Brisbane" },
+      { range: "LONG", name: "[BOS] 보스턴", zone: "America/New_York" },
+      { range: "LONG", name: "[CDG] 파리", zone: "Europe/Paris" },
+      { range: "LONG", name: "[DFW] 댈러스", zone: "America/Chicago" },
+      { range: "LONG", name: "[FRA] 프랑크푸르트", zone: "Europe/Berlin" },
+      { range: "LONG", name: "[HNL] 호놀룰루/하와이", zone: "Pacific/Honolulu" },
+      { range: "LONG", name: "[IAD] 워싱턴D.C.", zone: "America/New_York" },
+      { range: "LONG", name: "[IST] 이스탄불", zone: "Europe/Istanbul" },
+      { range: "LONG", name: "[JFK] 뉴욕", zone: "America/New_York" },
+      { range: "LONG", name: "[LAS] 라스베이거스", zone: "America/Los_Angeles" },
+      { range: "LONG", name: "[LAX] 로스앤젤레스", zone: "America/Los_Angeles" },
+      { range: "LONG", name: "[LHR] 런던", zone: "Europe/London" },
+      { range: "LONG", name: "[LIS] 리스본", zone: "Europe/Lisbon" },
+      { range: "LONG", name: "[MAD] 마드리드", zone: "Europe/Madrid" },
+      { range: "LONG", name: "[MXP] 밀라노", zone: "Europe/Rome" },
+      { range: "LONG", name: "[ORD] 시카고", zone: "America/Chicago" },
+      { range: "LONG", name: "[PRG] 프라하", zone: "Europe/Prague" },
+      { range: "LONG", name: "[SEA] 시애틀", zone: "America/Los_Angeles" },
+      { range: "LONG", name: "[SFO] 샌프란시스코", zone: "America/Los_Angeles" },
+      { range: "LONG", name: "[SYD] 시드니", zone: "Australia/Sydney" },
+      { range: "LONG", name: "[VIE] 빈/비엔나", zone: "Europe/Vienna" },
+      { range: "LONG", name: "[YVR] 밴쿠버", zone: "America/Vancouver" },
+      { range: "LONG", name: "[YYZ] 토론토", zone: "America/Toronto" },
+      { range: "MID", name: "[BKK] 방콕 (수완나품)", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[CEB] 세부", zone: "Asia/Manila" },
+      { range: "MID", name: "[CGK] 자카르타", zone: "Asia/Jakarta" },
+      { range: "MID", name: "[CXR] 나트랑 (캄란)", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[DAD] 다낭", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[DEL] 델리", zone: "Asia/Kolkata" },
+      { range: "MID", name: "[DPS] 발리 (덴파사르)", zone: "Asia/Makassar" },
+      { range: "MID", name: "[GUM] 괌", zone: "Pacific/Guam" },
+      { range: "MID", name: "[HAN] 하노이", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[HKT] 푸켓", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[KTI] 알마티", zone: "Asia/Almaty" },
+      { range: "MID", name: "[KUL] 쿠알라룸푸르", zone: "Asia/Kuala_Lumpur" },
+      { range: "MID", name: "[MNL] 마닐라", zone: "Asia/Manila" },
+      { range: "MID", name: "[PQC] 푸꾸옥", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[SGN] 호치민", zone: "Asia/Bangkok" },
+      { range: "MID", name: "[SIN] 싱가포르", zone: "Asia/Singapore" },
+      { range: "SHORT_JP", name: "[AOJ] 아오모리", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[CTS] 삿포로 (신치토세)", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[FUK] 후쿠오카", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[HND] 도쿄 (하네다)", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[KIJ] 니가타", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[KIX] 오사카 (간사이)", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[KMJ] 구마모토", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[KMQ] 고마쓰", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[KOJ] 가고시마", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[NGO] 나고야 (주부)", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[NGS] 나가사키", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[NRT] 도쿄 (나리타)", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[OKA] 오키나와 (나하)", zone: "Asia/Tokyo" },
+      { range: "SHORT_JP", name: "[UKB] 고베", zone: "Asia/Tokyo" },
+      { range: "SHORT_CN", name: "[CAN] 광저우 (바이윈)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[CGO] 정저우 (신정)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[CSX] 창샤 (황화)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[DLC] 다롄 (저우수이쯔)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[DYG] 장자제 (허화)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[FOC] 푸저우 (창러)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[HFE] 허페이 (신차오)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[HKG] 홍콩", zone: "Asia/Hong_Kong" },
+      { range: "SHORT_CN", name: "[MFM] 마카오", zone: "Asia/Macau" },
+      { range: "SHORT_CN", name: "[PEK] 베이징 (서우두)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[PVG] 상하이 (푸둥)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[SHE] 선양 (타오셴)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[SZX] 선전 (바오안)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[TAO] 칭다오 (자오둥)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[WUH] 우한 (톈허)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[XIY] 시안 (셴양)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[XMN] 샤먼 (가오치)", zone: "Asia/Shanghai" },
+      { range: "SHORT_CN", name: "[YNJ] 옌지 (차오양촨)", zone: "Asia/Shanghai" },
+      { range: "SHORT_ETC", name: "[TPE] 타이베이 (타오위안)", zone: "Asia/Taipei" },
+      { range: "SHORT_ETC", name: "[UBN] 울란바토르 (칭기즈 칸)", zone: "Asia/Ulaanbaatar" }
+    ];
+
+    // 시/분 드롭다운 옵션 생성
+    function populateTimeDropdowns(prefix) {
+      const hourSelect = document.getElementById(`${prefix}Hour`);
+      const minSelect = document.getElementById(`${prefix}Min`);
+
+      for (let h = 0; h < 24; h++) {
+        const val = String(h).padStart(2, '0');
+        hourSelect.add(new Option(`${val}시`, val));
+      }
+
+      for (let m = 0; m < 60; m += 5) { // 5분 단위 (직관적)
+        const val = String(m).padStart(2, '0');
+        minSelect.add(new Option(`${val}분`, val));
+      }
+    }
+
+    function updateCityDropdown(panelPrefix) {
+      const rangeVal = document.getElementById(`${panelPrefix}_range`).value;
+      const citySelect = document.getElementById(`${panelPrefix}_city`);
+
+      citySelect.innerHTML = "";
+      const filteredCities = cities.filter(c => rangeVal === "ALL" || c.range === rangeVal);
+      filteredCities.forEach(c => {
+        citySelect.add(new Option(c.name, c.zone));
+      });
+    }
+
+    function init() {
+      populateTimeDropdowns('p2_kst');
+      populateTimeDropdowns('p3_ata');
+      populateTimeDropdowns('p4_brief');
+
+      updateCityDropdown('p2');
+      updateCityDropdown('p3');
+      updateCityDropdown('p4');
+
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const hourStr = String(now.getHours()).padStart(2, '0');
+      const minStr = String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0');
+
+      // 초기 날짜 및 시간 자동 입력
+      ['p2_kst', 'p3_ata', 'p4_brief'].forEach(prefix => {
+        document.getElementById(`${prefix}Date`).value = dateStr;
+        document.getElementById(`${prefix}Hour`).value = hourStr;
+        document.getElementById(`${prefix}Min`).value = minStr;
+      });
+
+      calcPanel1();
+      calcPanel2();
+      calcPanel3();
+      calcPanel4();
+    }
+
+    function getTzOffsetMinutes(timeZone, date) {
+      const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
+      return (tzDate - utcDate) / (1000 * 60);
+    }
+
+    function formatTime(date, timeZone) {
+      const formatter = new Intl.DateTimeFormat('ko-KR', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(date);
+      const hash = {};
+      parts.forEach(p => hash[p.type] = p.value);
+      return `${hash.year}-${hash.month}-${hash.day} ${hash.hour}:${hash.minute}`;
+    }
+
+    function formatOffsetString(offsetMin) {
+      const sign = offsetMin >= 0 ? '+' : '-';
+      const abs = Math.abs(offsetMin);
+      const h = String(Math.floor(abs / 60)).padStart(2, '0');
+      const m = String(abs % 60).padStart(2, '0');
+      return `UTC${sign}${h}:${m}`;
+    }
+
+    function getSelectedDate(prefix) {
+      const d = document.getElementById(`${prefix}Date`).value;
+      const h = document.getElementById(`${prefix}Hour`).value;
+      const m = document.getElementById(`${prefix}Min`).value;
+      if (!d) return null;
+      const [year, month, day] = d.split("-").map(Number);
+      return { year, month, day, hour: Number(h), minute: Number(m) };
+    }
+
+    // --- [1번 패널] FDP MARGIN ---
+    function calcPanel1() {
+      const baseH = parseInt(document.getElementById("p1_baseH").value) || 0;
+      const baseM = parseInt(document.getElementById("p1_baseM").value) || 0;
+      const curH = parseInt(document.getElementById("p1_curH").value) || 0;
+      const curM = parseInt(document.getElementById("p1_curM").value) || 0;
+
+      const baseTotalMin = baseH * 60 + baseM;
+      const curTotalMin = curH * 60 + curM;
+      const diffMin = baseTotalMin - curTotalMin;
+
+      const resultBox = document.getElementById("p1_marginResult");
+      const statusBox = document.getElementById("p1_statusText");
+
+      if (diffMin < 0) {
+        const absMin = Math.abs(diffMin);
+        const h = Math.floor(absMin / 60);
+        const m = absMin % 60;
+        resultBox.textContent = `-${h}시간 ${m}분`;
+        resultBox.style.color = "#dc2626";
+        statusBox.textContent = "🚨 FDP 한도 초과 (위반)";
+        statusBox.style.color = "#dc2626";
+      } else {
+        const h = Math.floor(diffMin / 60);
+        const m = diffMin % 60;
+        resultBox.textContent = `+${h}시간 ${m}분`;
+        resultBox.style.color = "#e11d48";
+        statusBox.textContent = "FDP 한도 내 정상";
+        statusBox.style.color = "#64748b";
+      }
+    }
+
+    // --- [2번 패널] 시차 비교 ---
+    function calcPanel2() {
+      const citySelect = document.getElementById("p2_city");
+      if (!citySelect.value) return;
+
+      const targetZone = citySelect.value;
+      const dt = getSelectedDate("p2_kst");
+      if (!dt) return;
+
+      const kstUtcMs = Date.UTC(dt.year, dt.month - 1, dt.day, dt.hour - 9, dt.minute);
+      const targetDate = new Date(kstUtcMs);
+
+      document.getElementById("p2_kstResult").textContent = formatTime(targetDate, "Asia/Seoul");
+      document.getElementById("p2_zuluResult").textContent = formatTime(targetDate, "UTC");
+      document.getElementById("p2_localResult").textContent = formatTime(targetDate, targetZone);
+
+      const targetOffsetMin = getTzOffsetMinutes(targetZone, targetDate);
+      const selectedOptionText = citySelect.options[citySelect.selectedIndex].text;
+      const cleanCityName = selectedOptionText.split(" ")[0].replace('[', '').replace(']', '');
+      
+      document.getElementById("p2_localCityLabel").textContent = cleanCityName;
+      document.getElementById("p2_localOffsetLabel").textContent = formatOffsetString(targetOffsetMin);
+    }
+
+    // --- [3번 패널] 다음 비행근무 시작 가능 시각 ---
+    function calcPanel3() {
+      const ataType = document.getElementById("p3_ataType").value;
+      const citySelect = document.getElementById("p3_city");
+      if (!citySelect.value) return;
+
+      const targetZone = citySelect.value;
+      const dt = getSelectedDate("p3_ata");
+      const restH = parseInt(document.getElementById("p3_restHours").value) || 0;
+      const restM = parseInt(document.getElementById("p3_restMinutes").value) || 0;
+
+      if (!dt) return;
+
+      const tempUtcDate = new Date(Date.UTC(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute));
+      let offsetMin = 0;
+
+      if (ataType === "KST") offsetMin = 540;
+      else if (ataType === "ZULU") offsetMin = 0;
+      else if (ataType === "LOCAL") offsetMin = getTzOffsetMinutes(targetZone, tempUtcDate);
+
+      const ataUtcMs = tempUtcDate.getTime() - (offsetMin * 60 * 1000);
+      const postDutyMs = 30 * 60 * 1000;
+      const restMs = (restH * 60 + restM) * 60 * 1000;
+      const resultUtcMs = ataUtcMs + postDutyMs + restMs;
+
+      const resultDate = new Date(resultUtcMs);
+
+      document.getElementById("p3_kstResult").textContent = formatTime(resultDate, "Asia/Seoul");
+      document.getElementById("p3_zuluResult").textContent = formatTime(resultDate, "UTC");
+      document.getElementById("p3_localResult").textContent = formatTime(resultDate, targetZone);
+
+      const targetOffsetMin = getTzOffsetMinutes(targetZone, resultDate);
+      const selectedOptionText = citySelect.options[citySelect.selectedIndex].text;
+      const cleanCityName = selectedOptionText.split(" ")[0].replace('[', '').replace(']', '');
+
+      document.getElementById("p3_localCityLabel").textContent = cleanCityName;
+      document.getElementById("p3_localOffsetLabel").textContent = formatOffsetString(targetOffsetMin);
+    }
+
+    // --- [4번 패널] FDP 내 최대 출발 가능 시각 ---
+    function calcPanel4() {
+      const briefType = document.getElementById("p4_briefType").value;
+      const citySelect = document.getElementById("p4_city");
+      if (!citySelect.value) return;
+
+      const targetZone = citySelect.value;
+      const dt = getSelectedDate("p4_brief");
+      const fdpH = parseInt(document.getElementById("p4_fdpHours").value) || 0;
+      const fdpM = parseInt(document.getElementById("p4_fdpMinutes").value) || 0;
+      const fltH = parseInt(document.getElementById("p4_flightHours").value) || 0;
+      const fltM = parseInt(document.getElementById("p4_flightMinutes").value) || 0;
+
+      if (!dt) return;
+
+      const tempUtcDate = new Date(Date.UTC(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute));
+      let offsetMin = 0;
+
+      if (briefType === "KST") offsetMin = 540;
+      else if (briefType === "ZULU") offsetMin = 0;
+      else if (briefType === "LOCAL") offsetMin = getTzOffsetMinutes(targetZone, tempUtcDate);
+
+      const briefUtcMs = tempUtcDate.getTime() - (offsetMin * 60 * 1000);
+      const fdpMs = (fdpH * 60 + fdpM) * 60 * 1000;
+      const fltMs = (fltH * 60 + fltM) * 60 * 1000;
+
+      const maxDeptUtcMs = briefUtcMs + fdpMs - fltMs;
+      const resultDate = new Date(maxDeptUtcMs);
+
+      document.getElementById("p4_kstResult").textContent = formatTime(resultDate, "Asia/Seoul");
+      document.getElementById("p4_zuluResult").textContent = formatTime(resultDate, "UTC");
+      document.getElementById("p4_localResult").textContent = formatTime(resultDate, targetZone);
+
+      const targetOffsetMin = getTzOffsetMinutes(targetZone, resultDate);
+      const selectedOptionText = citySelect.options[citySelect.selectedIndex].text;
+      const cleanCityName = selectedOptionText.split(" ")[0].replace('[', '').replace(']', '');
+
+      document.getElementById("p4_localCityLabel").textContent = cleanCityName;
+      document.getElementById("p4_localOffsetLabel").textContent = formatOffsetString(targetOffsetMin);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
